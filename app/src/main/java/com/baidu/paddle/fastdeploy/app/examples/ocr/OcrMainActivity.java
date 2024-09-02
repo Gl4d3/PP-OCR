@@ -4,18 +4,43 @@ package com.baidu.paddle.fastdeploy.app.examples.ocr;
 
 import static com.baidu.paddle.fastdeploy.app.ui.Utils.decodeBitmap; import static com.baidu.paddle.fastdeploy.app.ui.Utils.getRealPathFromURI;
 
-import android.Manifest; import android.annotation.SuppressLint; import android.app.Activity; import android.app.AlertDialog; import android.content.DialogInterface; import android.content.Intent; import android.content.SharedPreferences; import android.content.pm.PackageManager; import android.graphics.Bitmap; import android.net.Uri; import android.os.Bundle; import android.os.SystemClock; import android.preference.PreferenceManager; import android.support.annotation.NonNull; import android.support.v4.app.ActivityCompat; import android.support.v4.content.ContextCompat; import android.view.View; import android.view.ViewGroup; import android.view.Window; import android.view.WindowManager; import android.widget.ImageButton; import android.widget.ImageView; import android.widget.TextView;
+import android.Manifest; import android.annotation.SuppressLint; import android.app.Activity; import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface; import android.content.Intent; import android.content.SharedPreferences; import android.content.pm.PackageManager; import android.graphics.Bitmap;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle; import android.os.SystemClock; import android.preference.PreferenceManager; import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
+import android.support.v4.app.ActivityCompat; import android.support.v4.content.ContextCompat; import android.view.View; import android.view.ViewGroup; import android.view.Window; import android.view.WindowManager; import android.widget.ImageButton; import android.widget.ImageView; import android.widget.TextView;
 
-import com.baidu.paddle.fastdeploy.RuntimeOption; import com.baidu.paddle.fastdeploy.app.examples.R; import com.baidu.paddle.fastdeploy.app.ui.view.CameraSurfaceView; import com.baidu.paddle.fastdeploy.app.ui.view.ResultListView; import com.baidu.paddle.fastdeploy.app.ui.Utils; import com.baidu.paddle.fastdeploy.app.ui.view.adapter.BaseResultAdapter; import com.baidu.paddle.fastdeploy.app.ui.view.model.BaseResultModel; import com.baidu.paddle.fastdeploy.pipeline.PPOCRv3; import com.baidu.paddle.fastdeploy.vision.OCRResult; import com.baidu.paddle.fastdeploy.vision.Visualize; import com.baidu.paddle.fastdeploy.vision.ocr.Classifier; import com.baidu.paddle.fastdeploy.vision.ocr.DBDetector; import com.baidu.paddle.fastdeploy.vision.ocr.Recognizer;
+import com.baidu.paddle.fastdeploy.app.utils.RuntimeOption;
+import com.baidu.paddle.fastdeploy.app.examples.R;
+import com.baidu.paddle.fastdeploy.app.ui.view.CameraSurfaceView;
+import com.baidu.paddle.fastdeploy.app.ui.view.ResultListView;
+import com.baidu.paddle.fastdeploy.app.ui.Utils;
+import com.baidu.paddle.fastdeploy.app.ui.view.adapter.BaseResultAdapter;
+import com.baidu.paddle.fastdeploy.app.ui.view.model.BaseResultModel;
+import com.baidu.paddle.fastdeploy.app.utils.PPOCRv3;
+import com.baidu.paddle.fastdeploy.app.utils.OCRResult;
+import com.baidu.paddle.fastdeploy.app.utils.Visualize;
+import com.baidu.paddle.fastdeploy.app.utils.Classifier;
+import com.baidu.paddle.fastdeploy.app.utils.DBDetector;
+import com.baidu.paddle.fastdeploy.app.utils.Recognizer;
 
 import java.util.ArrayList; import java.util.List;
 
+@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class OcrMainActivity extends Activity implements View.OnClickListener, CameraSurfaceView.OnTextureChangedListener { private static final String TAG = OcrMainActivity.class.getSimpleName();
 
     CameraSurfaceView svPreview;
     TextView tvStatus;
     ImageButton btnSwitch;
     ImageButton btnShutter;
+
+    ImageButton btnTorch;
     ImageButton btnSettings;
     ImageView realtimeToggleButton;
     boolean isRealtimeStatusRunning = false;
@@ -60,6 +85,9 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
     private float[] recScores;
     private boolean initialized;
 
+    private boolean isFlashlightOn = false;
+    private static final int CAMERA_REQUEST_CODE = 100;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -89,6 +117,9 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
 //            case R.id.btn_switch:
 //                svPreview.switchCamera();
 //                break;
+            case R.id.btn_flashlight:
+                checkCameraPermission();
+                toggleFlashlight(isFlashlightOn);
             case R.id.btn_shutter:
                 TYPE = BTN_SHUTTER;
                 shutterAndPauseCamera();
@@ -122,6 +153,41 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
                 break;
         }
     }
+
+    private void checkCameraPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, CAMERA_REQUEST_CODE);
+        }
+    }
+
+    private void toggleFlashlight(boolean isFlashlightOn) {
+        CameraManager cameraManager = null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        }
+        try {
+            String cameraId = null;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                for (String id : cameraManager.getCameraIdList()) {
+                    CameraCharacteristics cameraCharacteristics = cameraManager.getCameraCharacteristics(id);
+                    Boolean hasFlash = cameraCharacteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+                    if (hasFlash != null && hasFlash) {
+                        cameraId = id;
+                        break;
+                    }
+                }
+            }
+
+            if (cameraId != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    cameraManager.setTorchMode(cameraId, isFlashlightOn);
+                }
+            }
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     @Override
     public void onBackPressed() {
@@ -340,6 +406,7 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
         tvStatus = (TextView) findViewById(R.id.tv_status);
 //        btnSwitch = (ImageButton) findViewById(R.id.btn_switch);
 //        btnSwitch.setOnClickListener(this);
+        btnTorch = (ImageButton) findViewById(R.id.btn_flashlight);
         btnShutter = (ImageButton) findViewById(R.id.btn_shutter);
         btnShutter.setOnClickListener(this);
         btnSettings = (ImageButton) findViewById(R.id.btn_settings);
