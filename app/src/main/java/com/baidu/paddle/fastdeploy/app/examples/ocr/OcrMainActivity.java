@@ -32,9 +32,7 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
     private Bitmap originShutterBitmap;
     private boolean isShutterBitmapCopied = false;
 
-    private CameraSurfaceView svPreview;
     private View captureArea;
-    private Bitmap capturedBitmap;
 
 
     private List<BaseResultModel> results = new ArrayList<>();
@@ -165,7 +163,8 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
                         resultPageView.setVisibility(View.VISIBLE);
                         if (shutterBitmap != null && !shutterBitmap.isRecycled()) {
                             resultImage.setImageBitmap(shutterBitmap);
-                            processImage(shutterBitmap);
+                            cropAndProcessImage();
+
                         } else {
                             new AlertDialog.Builder(OcrMainActivity.this)
                                     .setTitle("Empty Result!")
@@ -178,6 +177,46 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
 
             }
         }).start();
+    }
+
+    private void cropAndProcessImage() {
+
+        // Get the coordinates of the capture area relative to the camera preview
+        int[] previewLocation = new int[2];
+        svPreview.getLocationInWindow(previewLocation);
+
+        int[] captureLocation = new int[2];
+        captureArea.getLocationInWindow(captureLocation);
+
+        int left = captureLocation[0] - previewLocation[0];
+        int top = captureLocation[1] - previewLocation[1];
+        int width = captureArea.getWidth();
+        int height = captureArea.getHeight();
+
+        // Adjust coordinates based on the bitmap's dimensions vs the preview's dimensions
+        float scaleX = (float) shutterBitmap.getWidth() / svPreview.getWidth();
+        float scaleY = (float) shutterBitmap.getHeight() / svPreview.getHeight();
+
+        left = (int) (left * scaleX);
+        top = (int) (top * scaleY);
+        width = (int) (width * scaleX);
+        height = (int) (height * scaleY);
+
+        // Ensure we're not exceeding the bitmap's boundaries
+        left = Math.max(0, left);
+        top = Math.max(0, top);
+        width = Math.min(width, shutterBitmap.getWidth() - left);
+        height = Math.min(height, shutterBitmap.getHeight() - top);
+
+        // Crop the bitmap
+        Bitmap croppedBitmap = Bitmap.createBitmap(shutterBitmap, left, top, width, height);
+
+        // Process the cropped image
+        processImage(croppedBitmap);
+
+        // Clean up
+        shutterBitmap.recycle();
+        shutterBitmap = null;
     }
 
     private void copyBitmapFromCamera(Bitmap ARGB8888ImageBitmap) {
