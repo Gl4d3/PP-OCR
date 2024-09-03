@@ -23,19 +23,10 @@
                 android:id="@+id/back_in_result"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:padding="8dp"
+                android:padding="10dp"
                 android:src="@drawable/back_btn"
                 app:tint="#F5A623" />
 
-            <TextView
-                android:id="@+id/model_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:layout_marginStart="16dp"
-                android:textColor="#F5A623"
-                android:textSize="18sp"
-                android:textStyle="bold" />
         </com.baidu.paddle.fastdeploy.app.ui.layout.ActionBarLayout>
 
         <FrameLayout
@@ -51,7 +42,13 @@
 
         </FrameLayout>
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp">
+
         <TextView
+            style="@style/list_result_view_tablehead_style"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
@@ -61,6 +58,17 @@
             android:textSize="20sp"
             android:textStyle="bold" />
 
+            <TextView
+                android:id="@+id/elapsed_time"
+                style="@style/list_result_view_tablehead_style"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="end"
+                android:textColor="#F5A623"
+                android:textStyle="normal" />
+
+        </LinearLayout>
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

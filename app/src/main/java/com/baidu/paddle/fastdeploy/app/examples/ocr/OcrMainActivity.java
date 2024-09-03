@@ -60,6 +60,9 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
     private float[] recScores;
     private boolean initialized;
 
+    // Record the start time
+    long startTime;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -162,6 +165,8 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
                         cameraPageView.setVisibility(View.GONE);
                         resultPageView.setVisibility(View.VISIBLE);
                         if (shutterBitmap != null && !shutterBitmap.isRecycled()) {
+                            // Record the start time
+                            startTime = System.currentTimeMillis();
                             resultImage.setImageBitmap(shutterBitmap);
                             cropAndProcessImage();
 
@@ -368,6 +373,7 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
     }
 
     private void processImage(Bitmap bitmap) {
+
         // Apply a short delay to ensure the image is fully processed
         SystemClock.sleep(TIME_SLEEP_INTERVAL * 10);
 
@@ -399,6 +405,14 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
         } else {
             shutterBitmap = originShutterBitmap.copy(Bitmap.Config.ARGB_8888, true);
         }
+
+        // Record the end time and calculate the elapsed time
+        long endTime = System.currentTimeMillis();
+        long elapsedTime = endTime - startTime;
+
+        // Display the elapsed time
+        TextView elapsedTimeTextView = findViewById(R.id.elapsed_time);
+        elapsedTimeTextView.setText("Time: " + elapsedTime + " ms");
     }
 
     @SuppressLint("ApplySharedPref")
