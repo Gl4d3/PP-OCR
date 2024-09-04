@@ -34,9 +34,6 @@ public class BaseResultAdapter extends ArrayAdapter<BaseResultModel> {
 
         View view = LayoutInflater.from(getContext()).inflate(resourceId, null);
 
-//        TextView indexText = (TextView) view.findViewById(R.id.index);
-//        indexText.setText(String.valueOf(model.getIndex()));
-
         TextView nameText = (TextView) view.findViewById(R.id.name);
         nameText.setText(String.valueOf(model.getName()));
 
