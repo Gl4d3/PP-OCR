@@ -4,15 +4,7 @@ package com.baidu.paddle.fastdeploy.app.examples.ocr;
 
 import static com.baidu.paddle.fastdeploy.app.ui.Utils.decodeBitmap; import static com.baidu.paddle.fastdeploy.app.ui.Utils.getRealPathFromURI;
 
-import android.Manifest; import android.annotation.SuppressLint; import android.app.Activity; import android.app.AlertDialog;
-import android.content.Context;
-import android.content.DialogInterface; import android.content.Intent; import android.content.SharedPreferences; import android.content.pm.PackageManager; import android.graphics.Bitmap;
-import android.hardware.camera2.CameraAccessException;
-import android.hardware.camera2.CameraCharacteristics;
-import android.hardware.camera2.CameraManager;
-import android.net.Uri;
-import android.os.Build;
-import android.os.Bundle; import android.os.SystemClock; import android.preference.PreferenceManager; import android.support.annotation.NonNull; import android.support.v4.app.ActivityCompat; import android.support.v4.content.ContextCompat; import android.view.View; import android.view.ViewGroup; import android.view.Window; import android.view.WindowManager; import android.widget.ImageButton; import android.widget.ImageView; import android.widget.TextView;
+import android.Manifest; import android.annotation.SuppressLint; import android.app.Activity; import android.app.AlertDialog; import android.content.DialogInterface; import android.content.Intent; import android.content.SharedPreferences; import android.content.pm.PackageManager; import android.graphics.Bitmap; import android.net.Uri; import android.os.Bundle; import android.os.SystemClock; import android.preference.PreferenceManager; import android.support.annotation.NonNull; import android.support.v4.app.ActivityCompat; import android.support.v4.content.ContextCompat; import android.view.View; import android.view.ViewGroup; import android.view.Window; import android.view.WindowManager; import android.widget.ImageButton; import android.widget.ImageView; import android.widget.TextView;
 
 import com.baidu.paddle.fastdeploy.RuntimeOption; import com.baidu.paddle.fastdeploy.app.examples.R; import com.baidu.paddle.fastdeploy.app.ui.view.CameraSurfaceView; import com.baidu.paddle.fastdeploy.app.ui.view.ResultListView; import com.baidu.paddle.fastdeploy.app.ui.Utils; import com.baidu.paddle.fastdeploy.app.ui.view.adapter.BaseResultAdapter; import com.baidu.paddle.fastdeploy.app.ui.view.model.BaseResultModel; import com.baidu.paddle.fastdeploy.pipeline.PPOCRv3; import com.baidu.paddle.fastdeploy.vision.OCRResult; import com.baidu.paddle.fastdeploy.vision.Visualize; import com.baidu.paddle.fastdeploy.vision.ocr.Classifier; import com.baidu.paddle.fastdeploy.vision.ocr.DBDetector; import com.baidu.paddle.fastdeploy.vision.ocr.Recognizer;
 
@@ -22,7 +14,7 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
 
     CameraSurfaceView svPreview;
     TextView tvStatus;
-    ImageButton btnTorch;
+    ImageButton btnSwitch;
     ImageButton btnShutter;
     ImageButton btnSettings;
     ImageView realtimeToggleButton;
@@ -71,8 +63,6 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
     // Record the start time
     long startTime;
 
-    private boolean isTorchOn = false;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -99,9 +89,9 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.btn_torch:
-                toggleFlashlight();
-                break;
+//            case R.id.btn_switch:
+//                svPreview.switchCamera();
+//                break;
             case R.id.btn_shutter:
                 TYPE = BTN_SHUTTER;
                 shutterAndPauseCamera();
@@ -154,65 +144,6 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
         }
         if (recScores != null) {
             recScores = null;
-        }
-    }
-
-    private void toggleFlashlight() {
-        final boolean[] isFlashlightOn = {false};
-        CameraManager cameraManager = null;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-        }
-        try {
-            String cameraId = null;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                for (String id : cameraManager.getCameraIdList()) {
-                    CameraCharacteristics cameraCharacteristics = cameraManager.getCameraCharacteristics(id);
-                    Boolean hasFlash = cameraCharacteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
-                    if (hasFlash != null && hasFlash) {
-                        cameraId = id;
-                        break;
-                    }
-                }
-            }
-            // Listen for torch changes
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                String finalCameraId = cameraId;
-                cameraManager.registerTorchCallback(new CameraManager.TorchCallback() {
-                    @Override
-                    public void onTorchModeChanged(String id, boolean enabled) {
-                        if (id.equals(finalCameraId)) {
-                            // Update the torch state and UI
-                            isTorchOn = enabled;
-                            if (enabled) {
-                                btnTorch.setImageResource(R.drawable.torch_on);
-                            } else {
-                                btnTorch.setImageResource(R.drawable.torch_off);
-                            }
-                        }
-                    }
-                }, null);
-            }
-
-            try {
-                if (isTorchOn) {
-                    // Turn off the torch
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        assert cameraId != null;
-                        cameraManager.setTorchMode(cameraId, false);
-                    }
-                } else {
-                    // Turn on the torch
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        assert cameraId != null;
-                        cameraManager.setTorchMode(cameraId, true);
-                    }
-                }
-            } catch (CameraAccessException e) {
-                e.printStackTrace();
-            }
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
         }
     }
 
@@ -412,8 +343,8 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
         svPreview = (CameraSurfaceView) findViewById(R.id.sv_preview);
         svPreview.setOnTextureChangedListener(this);
         tvStatus = (TextView) findViewById(R.id.tv_status);
-        btnTorch = (ImageButton) findViewById(R.id.btn_torch);
-        btnTorch.setOnClickListener(this);
+//        btnSwitch = (ImageButton) findViewById(R.id.btn_switch);
+//        btnSwitch.setOnClickListener(this);
         btnShutter = (ImageButton) findViewById(R.id.btn_shutter);
         btnShutter.setOnClickListener(this);
         btnSettings = (ImageButton) findViewById(R.id.btn_settings);
