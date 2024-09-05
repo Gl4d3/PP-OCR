@@ -40,8 +40,21 @@ public class BaseResultAdapter extends ArrayAdapter<BaseResultModel> {
         TextView confidenceText = (TextView) view.findViewById(R.id.confidence);
         confidenceText.setText(formatFloatString(model.getConfidence()));
 
+        // Add new views for OCR results
+//        TextView ocrResultText = (TextView) view.findViewById(R.id.ocr_result);
+//        ocrResultText.setText(((ResultEntry) model).getOcrResult());
+//
+//        TextView dateTakenText = (TextView) view.findViewById(R.id.date_taken);
+//        dateTakenText.setText(((ResultEntry) model).getDateTaken().toString());
+//
+//        TextView categoryText = (TextView) view.findViewById(R.id.category);
+//        categoryText.setText(((ResultEntry) model).getCategory());
+
+
         return view;
     }
+
+
 
     public static String formatFloatString(float number) {
         DecimalFormat df = new DecimalFormat("0.00");
