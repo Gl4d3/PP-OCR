@@ -116,7 +116,7 @@
                 android:layout_height="@dimen/large_button_height">
 
                 <ImageButton
-                    android:id="@+id/btn_flashlight"
+                    android:id="@+id/btn_torch"
                     android:layout_width="60dp"
                     android:layout_height="60dp"
                     android:layout_alignParentLeft="true"
@@ -124,7 +124,7 @@
                     android:layout_marginLeft="60dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:scaleType="fitCenter"
-                    android:src="@drawable/flashlight_off" />
+                    android:src="@drawable/torch_off" />
 
                 <ImageButton
                     android:id="@+id/btn_shutter"
