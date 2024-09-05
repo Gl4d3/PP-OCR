@@ -50,6 +50,7 @@
     <string name="result_table_header_index">No.</string>
     <string name="result_table_header_name">Name</string>
     <string name="result_table_header_confidence">Confidence(%)</string>
+    <string name="result_table_header_filtered_text">Response Filter</string>"
     <string name="operation_confidence_control">Threshold Control</string>
     <string name="operation_retry">Recognize Again</string>
     <string name="operation_save">Save Results</string>

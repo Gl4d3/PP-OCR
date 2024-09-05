@@ -3,16 +3,18 @@ package com.baidu.paddle.fastdeploy.app.ui.view.model;
 public class BaseResultModel {
     private int index;
     private String name;
+    private String filteredText;
     private float confidence;
 
     public BaseResultModel() {
 
     }
 
-    public BaseResultModel(int index, String name, float confidence) {
+    public BaseResultModel(int index, String name, String filteredText, float confidence) {
         this.index = index;
         this.name = name;
         this.confidence = confidence;
+        this.filteredText = filteredText;
     }
 
     public float getConfidence() {
@@ -37,5 +39,13 @@ public class BaseResultModel {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getFilteredText() {
+        return filteredText;
+    }
+
+    public void setFilteredText(String filteredText) {
+        this.filteredText = filteredText;
     }
 }

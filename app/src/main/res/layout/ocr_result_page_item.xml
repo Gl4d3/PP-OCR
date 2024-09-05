@@ -21,5 +21,14 @@
         android:layout_height="wrap_content"
         android:layout_weight="0.4"
         android:gravity="end"
-        android:textColor="#F5A623" />
+        android:textColor="#F5A623"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/filtered_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.4"
+        android:gravity="end"
+        android:textColor="#F5A623"  />
 </LinearLayout>

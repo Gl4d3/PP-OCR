@@ -160,13 +160,11 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
     private void toggleFlashlight() {
         final boolean[] isFlashlightOn = {false};
         CameraManager cameraManager = null;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-        }
+        cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+
         try {
             String cameraId = null;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                for (String id : cameraManager.getCameraIdList()) {
+            for (String id : cameraManager.getCameraIdList()) {
                     CameraCharacteristics cameraCharacteristics = cameraManager.getCameraCharacteristics(id);
                     Boolean hasFlash = cameraCharacteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
                     if (hasFlash != null && hasFlash) {
@@ -174,7 +172,7 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
                         break;
                     }
                 }
-            }
+
             // Listen for torch changes
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 String finalCameraId = cameraId;
@@ -457,7 +455,8 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
         if (initialized) {
             for (int i = 0; i < texts.length; i++) {
                 if (recScores[i] > CONFIDENCE_THRESHOLD) {
-                    results.add(new BaseResultModel(i + 1, texts[i], recScores[i]));
+                    String filteredText = filterText(texts[i]);
+                    results.add(new BaseResultModel(i + 1, texts[i], filteredText, recScores[i]));
                 }
             }
         }
@@ -482,6 +481,16 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
         // Display the elapsed time
         TextView elapsedTimeTextView = findViewById(R.id.elapsed_time);
         elapsedTimeTextView.setText("Time: " + elapsedTime + " ms");
+    }
+
+    private String filterText(String text) {
+        StringBuilder filteredText = new StringBuilder();
+        for (char c : text.toCharArray()) {
+            if (Character.isDigit(c) || c == '.' || (c >= 'o' && c <= '9')) {
+                filteredText.append(c);
+            }
+        }
+        return filteredText.toString();
     }
 
     @SuppressLint("ApplySharedPref")
@@ -535,7 +544,7 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
             DBDetector detModel = new DBDetector(detModelFile, detParamsFile, detOption);
             Classifier clsModel = new Classifier(clsModelFile, clsParamsFile, clsOption);
             Recognizer recModel = new Recognizer(recModelFile, recParamsFile, recLabelFilePath, recOption);
-            predictor.init(detModel, clsModel, recModel);
+            predictor.init(detModel, recModel);
 
         }
     }
