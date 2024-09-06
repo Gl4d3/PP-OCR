@@ -47,16 +47,16 @@
             android:layout_height="wrap_content"
             android:padding="8dp">
 
-        <TextView
-            style="@style/list_result_view_tablehead_style"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="8dp"
-            android:text="@string/result_label"
-            android:textColor="#F5A623"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            <TextView
+                style="@style/list_result_view_tablehead_style"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp"
+                android:text="@string/result_label"
+                android:textColor="#F5A623"
+                android:textSize="20sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/elapsed_time"
@@ -110,4 +110,26 @@
 
         </ScrollView>
     </LinearLayout>
+
+    <!-- Custom Floating Button -->
+    <FrameLayout
+        android:id="@+id/view_results_button"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:background="@drawable/circular_button_background"
+        android:elevation="6dp"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_view_results"
+            app:tint="#FFFFFF" />
+
+    </FrameLayout>
+
 </FrameLayout>

@@ -17,7 +17,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".ocr.OcrMainActivity">
+        <activity
+            android:name=".ocr.OcrMainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
@@ -27,6 +29,9 @@
             android:name=".ocr.OcrSettingsActivity"
             android:label="Settings">
         </activity>
+        <activity
+            android:name="com.baidu.paddle.fastdeploy.app.ui.view.database.DbResultsActivity"
+            android:label="OCR Database Results"/>
     </application>
 
 </manifest>

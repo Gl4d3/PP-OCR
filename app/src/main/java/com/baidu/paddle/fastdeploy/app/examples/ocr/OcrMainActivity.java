@@ -1,5 +1,3 @@
-// 11:00 am Backup... Everything works (But cropping is off)
-
 package com.baidu.paddle.fastdeploy.app.examples.ocr;
 
 import static com.baidu.paddle.fastdeploy.app.ui.Utils.decodeBitmap; import static com.baidu.paddle.fastdeploy.app.ui.Utils.getRealPathFromURI;
@@ -12,22 +10,30 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle; import android.os.SystemClock; import android.preference.PreferenceManager; import android.support.annotation.NonNull; import android.support.v4.app.ActivityCompat; import android.support.v4.content.ContextCompat; import android.view.View; import android.view.ViewGroup; import android.view.Window; import android.view.WindowManager; import android.widget.ImageButton; import android.widget.ImageView; import android.widget.TextView;
+import android.os.Bundle; import android.os.SystemClock; import android.preference.PreferenceManager; import android.support.annotation.NonNull; import android.support.v4.app.ActivityCompat; import android.support.v4.content.ContextCompat; import android.view.View; import android.view.ViewGroup; import android.view.Window; import android.view.WindowManager;
+import android.widget.FrameLayout;
+import android.widget.ImageButton; import android.widget.ImageView; import android.widget.TextView;
 
-import com.baidu.paddle.fastdeploy.RuntimeOption; import com.baidu.paddle.fastdeploy.app.examples.R; import com.baidu.paddle.fastdeploy.app.ui.view.CameraSurfaceView; import com.baidu.paddle.fastdeploy.app.ui.view.ResultListView; import com.baidu.paddle.fastdeploy.app.ui.Utils; import com.baidu.paddle.fastdeploy.app.ui.view.adapter.BaseResultAdapter; import com.baidu.paddle.fastdeploy.app.ui.view.model.BaseResultModel; import com.baidu.paddle.fastdeploy.pipeline.PPOCRv3; import com.baidu.paddle.fastdeploy.vision.OCRResult; import com.baidu.paddle.fastdeploy.vision.Visualize; import com.baidu.paddle.fastdeploy.vision.ocr.Classifier; import com.baidu.paddle.fastdeploy.vision.ocr.DBDetector; import com.baidu.paddle.fastdeploy.vision.ocr.Recognizer;
+import com.baidu.paddle.fastdeploy.RuntimeOption; import com.baidu.paddle.fastdeploy.app.examples.R; import com.baidu.paddle.fastdeploy.app.ui.view.CameraSurfaceView; import com.baidu.paddle.fastdeploy.app.ui.view.ResultListView; import com.baidu.paddle.fastdeploy.app.ui.Utils; import com.baidu.paddle.fastdeploy.app.ui.view.adapter.BaseResultAdapter;
+import com.baidu.paddle.fastdeploy.app.ui.view.database.DatabaseHelper;
+import com.baidu.paddle.fastdeploy.app.ui.view.database.DbResultsActivity;
+import com.baidu.paddle.fastdeploy.app.ui.view.model.BaseResultModel; import com.baidu.paddle.fastdeploy.pipeline.PPOCRv3; import com.baidu.paddle.fastdeploy.vision.OCRResult; import com.baidu.paddle.fastdeploy.vision.Visualize; import com.baidu.paddle.fastdeploy.vision.ocr.Classifier; import com.baidu.paddle.fastdeploy.vision.ocr.DBDetector; import com.baidu.paddle.fastdeploy.vision.ocr.Recognizer;
 
 import java.util.ArrayList; import java.util.List;
 
 // Camera Imports
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import android.os.Environment;
 import android.widget.Toast;
+
+// Database Helper imports
+import android.database.sqlite.SQLiteDatabase;
+import android.content.ContentValues;
 
 public class OcrMainActivity extends Activity implements View.OnClickListener, CameraSurfaceView.OnTextureChangedListener { private static final String TAG = OcrMainActivity.class.getSimpleName();
 
@@ -50,6 +56,7 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
     private Bitmap originPicBitmap;
     private Bitmap originShutterBitmap;
     private boolean isShutterBitmapCopied = false;
+    private FrameLayout openDatabase;
 
     private View captureArea;
 
@@ -118,6 +125,10 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
                 shutterAndPauseCamera();
                 results.clear();
                 adapter.notifyDataSetChanged();
+                break;
+            case R.id.view_results_button:
+                startActivity(new Intent());
+                openOCRDatabase();
                 break;
             case R.id.btn_settings:
                 startActivity(new Intent(OcrMainActivity.this, OcrSettingsActivity.class));
@@ -439,6 +450,8 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
         backInResult = findViewById(R.id.back_in_result);
         backInResult.setOnClickListener(this);
         resultView = findViewById(R.id.result_list_view);
+        openDatabase = findViewById(R.id.view_results_button);
+        openDatabase.setOnClickListener(this);
 
         svPreview = findViewById(R.id.sv_preview);
         captureArea = findViewById(R.id.capture_area);
@@ -449,6 +462,7 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
 
     }
 
+    // Main Processing Function
     private void processImage(Bitmap bitmap) {
 
         // Apply a short delay to ensure the image is fully processed
@@ -466,7 +480,10 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
             for (int i = 0; i < texts.length; i++) {
                 if (recScores[i] > CONFIDENCE_THRESHOLD) {
                     String filteredText = filterText(texts[i]);
-                    results.add(new BaseResultModel(i + 1, texts[i], filteredText, recScores[i]));
+
+                    // A temporal class
+                    BaseResultModel baseResult = new BaseResultModel(i + 1, texts[i], filteredText, recScores[i]);
+                    results.add(baseResult);
                 }
             }
         }
@@ -496,10 +513,10 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
         File resultDir = createOCRResultDirectory();
 
         // Save the cropped image
-        saveCroppedImage(bitmap, resultDir);
+        String imagePath = saveCroppedImage(bitmap, resultDir);
 
         // Save the OCR results and processing time
-        saveOCRResults(results, elapsedTime, resultDir);
+        saveOCRResults(results, elapsedTime, resultDir, imagePath);
 
         // Optionally, you can show a toast message to inform the user
         Toast.makeText(this, "OCR results saved in " + resultDir.getName(), Toast.LENGTH_LONG).show();
@@ -507,10 +524,11 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
 
     // Create Directory
     private File createOCRResultDirectory() {
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        String dirName = "OCR_Result_" + timeStamp;
+
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
-        File resultDir = new File(storageDir, dirName);
+        File resultDir = new File(storageDir, "OCR_Results");
+
+        // Create directory if it doesn't exist
         if (!resultDir.exists()) {
             resultDir.mkdirs();
         }
@@ -518,31 +536,41 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
     }
 
     // Save Results
-    private void saveOCRResults(List<BaseResultModel> results, long elapsedTime, File resultDir) {
-        String fileName = "ocr_results.txt";
-        File resultFile = new File(resultDir, fileName);
+    private void saveOCRResults(List<BaseResultModel> results, long elapsedTime, File resultDir, String imagePath) {
+        // Initialize SQLite database
+        DatabaseHelper dbHelper = new DatabaseHelper(this);
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
 
-        try (FileWriter writer = new FileWriter(resultFile)) {
-            writer.write("OCR Results:\n");
-            writer.write("Processing Time: " + elapsedTime + " ms\n\n");
-            for (BaseResultModel result : results) {
-                writer.write("Text: " + result.getName() + "\n");
-                writer.write("Filtered Text: " + result.getFilteredText() + "\n");
-                writer.write("Confidence: " + result.getConfidence() + "\n\n");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+        for (BaseResultModel result : results) {
+            
+            ContentValues values = new ContentValues();
+            values.put(DatabaseHelper.COLUMN_TEXT, result.getName());
+            values.put(DatabaseHelper.COLUMN_FILTERED_TEXT, result.getFilteredText());
+            values.put(DatabaseHelper.COLUMN_CONFIDENCE, result.getConfidence());
+            values.put(DatabaseHelper.COLUMN_IMAGE_PATH, imagePath);  // Store the image path
+            values.put(DatabaseHelper.COLUMN_PROCESSING_TIME, elapsedTime);
+
+            // Insert into the database
+            db.insert(DatabaseHelper.TABLE_OCR_RESULTS, null, values);
         }
+
+        db.close();
     }
-    
-    private void saveCroppedImage(Bitmap croppedBitmap, File resultDir) {
-        String imageFileName = "cropped_image.jpg";
+
+    //  Save Cropped Bitmap
+    private String saveCroppedImage(Bitmap croppedBitmap, File resultDir) {
+        // Generate a unique image file name using the timestamp
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String imageFileName = "cropped_image_" + timeStamp + ".jpg";
         File imageFile = new File(resultDir, imageFileName);
 
         try (FileOutputStream out = new FileOutputStream(imageFile)) {
-            croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
+            boolean cropImage = croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
+            // Path to image for reference
+            return imageFile.getAbsolutePath();
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
     }
 
@@ -556,6 +584,13 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
         }
         return filteredText.toString();
     }
+
+    //  View Database Results/History
+    private void openOCRDatabase() {
+        Intent intent = new Intent(this, DbResultsActivity.class);
+        startActivity(intent);
+    }
+
 
     @SuppressLint("ApplySharedPref")
     public void initSettings() {
