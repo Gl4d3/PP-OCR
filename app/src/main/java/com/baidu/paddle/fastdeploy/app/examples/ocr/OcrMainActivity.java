@@ -18,6 +18,17 @@ import com.baidu.paddle.fastdeploy.RuntimeOption; import com.baidu.paddle.fastde
 
 import java.util.ArrayList; import java.util.List;
 
+// Camera Imports
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import android.os.Environment;
+import android.widget.Toast;
+
 public class OcrMainActivity extends Activity implements View.OnClickListener, CameraSurfaceView.OnTextureChangedListener { private static final String TAG = OcrMainActivity.class.getSimpleName();
 
     CameraSurfaceView svPreview;
@@ -305,7 +316,6 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
         }
     }
 
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -418,7 +428,7 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
         btnSettings.setOnClickListener(this);
         realtimeToggleButton = findViewById(R.id.realtime_toggle_btn);
         realtimeToggleButton.setOnClickListener(this);
-        realtimeToggleButton.setImageResource(R.drawable.realtime_stop_btn); // Set the initial state to stopped
+        realtimeToggleButton.setImageResource(R.drawable.realtime_stop_btn);
         backInPreview = findViewById(R.id.back_in_preview);
         backInPreview.setOnClickListener(this);
         albumSelectButton = findViewById(R.id.iv_select);
@@ -481,8 +491,62 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
         // Display the elapsed time
         TextView elapsedTimeTextView = findViewById(R.id.elapsed_time);
         elapsedTimeTextView.setText("Time: " + elapsedTime + " ms");
+
+        // Create a directory for this OCR result
+        File resultDir = createOCRResultDirectory();
+
+        // Save the cropped image
+        saveCroppedImage(bitmap, resultDir);
+
+        // Save the OCR results and processing time
+        saveOCRResults(results, elapsedTime, resultDir);
+
+        // Optionally, you can show a toast message to inform the user
+        Toast.makeText(this, "OCR results saved in " + resultDir.getName(), Toast.LENGTH_LONG).show();
     }
 
+    // Create Directory
+    private File createOCRResultDirectory() {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String dirName = "OCR_Result_" + timeStamp;
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
+        File resultDir = new File(storageDir, dirName);
+        if (!resultDir.exists()) {
+            resultDir.mkdirs();
+        }
+        return resultDir;
+    }
+
+    // Save Results
+    private void saveOCRResults(List<BaseResultModel> results, long elapsedTime, File resultDir) {
+        String fileName = "ocr_results.txt";
+        File resultFile = new File(resultDir, fileName);
+
+        try (FileWriter writer = new FileWriter(resultFile)) {
+            writer.write("OCR Results:\n");
+            writer.write("Processing Time: " + elapsedTime + " ms\n\n");
+            for (BaseResultModel result : results) {
+                writer.write("Text: " + result.getName() + "\n");
+                writer.write("Filtered Text: " + result.getFilteredText() + "\n");
+                writer.write("Confidence: " + result.getConfidence() + "\n\n");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private void saveCroppedImage(Bitmap croppedBitmap, File resultDir) {
+        String imageFileName = "cropped_image.jpg";
+        File imageFile = new File(resultDir, imageFileName);
+
+        try (FileOutputStream out = new FileOutputStream(imageFile)) {
+            croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Remove characters != "0-9" and "."
     private String filterText(String text) {
         StringBuilder filteredText = new StringBuilder();
         for (char c : text.toCharArray()) {
