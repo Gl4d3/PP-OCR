@@ -39,7 +39,7 @@ public class DbResultsActivity extends AppCompatActivity {
 
         loadOCRResultsFromDatabase();
 
-        adapter = new DatabaseResultAdapter(this, , ocrResultsList);
+        adapter = new DatabaseResultAdapter(this, ocrResultsList);
         listView.setAdapter(adapter);
     }
 

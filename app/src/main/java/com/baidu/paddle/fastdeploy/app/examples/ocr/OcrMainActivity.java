@@ -474,20 +474,6 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
         texts = result.mText;
         recScores = result.mRecScores;
 
-        results.clear();
-        initialized = result.initialized();
-        if (initialized) {
-            for (int i = 0; i < texts.length; i++) {
-                if (recScores[i] > CONFIDENCE_THRESHOLD) {
-                    String filteredText = filterText(texts[i]);
-
-                    // A temporal class
-                    BaseResultModel baseResult = new BaseResultModel(i + 1, texts[i], filteredText, recScores[i]);
-                    results.add(baseResult);
-                }
-            }
-        }
-
         adapter.notifyDataSetChanged();
         resultView.invalidate();
 
@@ -514,6 +500,20 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
 
         // Save the cropped image
         String imagePath = saveCroppedImage(bitmap, resultDir);
+
+        results.clear();
+        initialized = result.initialized();
+        if (initialized) {
+            for (int i = 0; i < texts.length; i++) {
+                if (recScores[i] > CONFIDENCE_THRESHOLD) {
+                    String filteredText = filterText(texts[i]);
+
+                    // A temporal class
+                    BaseResultModel baseResult = new BaseResultModel(i + 1, texts[i], filteredText, recScores[i], elapsedTime, imagePath);
+                    results.add(baseResult);
+                }
+            }
+        }
 
         // Save the OCR results and processing time
         saveOCRResults(results, elapsedTime, resultDir, imagePath);

@@ -1,7 +1,5 @@
 package com.baidu.paddle.fastdeploy.app.ui.view.model;
 
-import androidx.annotation.Nullable;
-
 public class BaseResultModel {
     private int index;
     private String name;
