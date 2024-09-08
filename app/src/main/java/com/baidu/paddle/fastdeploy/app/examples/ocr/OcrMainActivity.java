@@ -126,8 +126,7 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
                 results.clear();
                 adapter.notifyDataSetChanged();
                 break;
-            case R.id.view_results_button:
-                startActivity(new Intent());
+            case R.id.open_database:
                 openOCRDatabase();
                 break;
             case R.id.btn_settings:
@@ -180,62 +179,62 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
     }
 
     private void toggleFlashlight() {
-        final boolean[] isFlashlightOn = {false};
-        CameraManager cameraManager = null;
-        cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        if (cameraManager == null) {
+            Toast.makeText(this, "Camera service not available", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         try {
             String cameraId = null;
             for (String id : cameraManager.getCameraIdList()) {
-                    CameraCharacteristics cameraCharacteristics = cameraManager.getCameraCharacteristics(id);
-                    Boolean hasFlash = cameraCharacteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
-                    if (hasFlash != null && hasFlash) {
-                        cameraId = id;
-                        break;
-                    }
+                CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
+                Boolean hasFlash = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+                if (hasFlash != null && hasFlash) {
+                    cameraId = id;
+                    break;
                 }
+            }
 
-            // Listen for torch changes
+            if (cameraId == null) {
+                Toast.makeText(this, "No camera with flashlight found", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 String finalCameraId = cameraId;
                 cameraManager.registerTorchCallback(new CameraManager.TorchCallback() {
                     @Override
                     public void onTorchModeChanged(String id, boolean enabled) {
                         if (id.equals(finalCameraId)) {
-                            // Update the torch state and UI
                             isTorchOn = enabled;
-                            if (enabled) {
-                                btnTorch.setImageResource(R.drawable.torch_on);
-                            } else {
-                                btnTorch.setImageResource(R.drawable.torch_off);
-                            }
+                            runOnUiThread(() -> {
+                                btnTorch.setImageResource(enabled ? R.drawable.torch_on : R.drawable.torch_off);
+                            });
                         }
                     }
                 }, null);
-            }
 
-            try {
-                if (isTorchOn) {
-                    // Turn off the torch
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        assert cameraId != null;
-                        cameraManager.setTorchMode(cameraId, false);
+                try {
+                    cameraManager.setTorchMode(cameraId, !isTorchOn);
+                } catch (CameraAccessException e) {
+                    if (e.getReason() == CameraAccessException.CAMERA_IN_USE) {
+                        Toast.makeText(this, "Camera is currently in use", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Error accessing camera: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
-                } else {
-                    // Turn on the torch
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        assert cameraId != null;
-                        cameraManager.setTorchMode(cameraId, true);
-                    }
+                    e.printStackTrace();
                 }
-            } catch (CameraAccessException e) {
-                e.printStackTrace();
+            } else {
+                Toast.makeText(this, "Flashlight not supported on this device", Toast.LENGTH_SHORT).show();
             }
         } catch (CameraAccessException e) {
+            Toast.makeText(this, "Error accessing camera: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             e.printStackTrace();
         }
     }
 
+    //  Handles image Capture
     private void shutterAndPauseCamera() {
         new Thread(new Runnable() {
             @Override
@@ -450,7 +449,7 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
         backInResult = findViewById(R.id.back_in_result);
         backInResult.setOnClickListener(this);
         resultView = findViewById(R.id.result_list_view);
-        openDatabase = findViewById(R.id.view_results_button);
+        openDatabase = findViewById(R.id.open_database);
         openDatabase.setOnClickListener(this);
 
         svPreview = findViewById(R.id.sv_preview);

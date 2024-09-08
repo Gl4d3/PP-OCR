@@ -27,6 +27,7 @@ public class DbResultsActivity extends AppCompatActivity {
         setContentView(R.layout.ocr_database);
 
         listView = findViewById(R.id.result_list_view);
+//        cardView = findViewById(R.id.database_item);
         if (listView == null) {
             Log.e(TAG, "ListView not found in layout");
             Toast.makeText(this, "Error: ListView not found", Toast.LENGTH_SHORT).show();

@@ -113,7 +113,7 @@
 
     <!-- Custom Floating Button -->
     <FrameLayout
-        android:id="@+id/view_results_button"
+        android:id="@+id/open_database"
         android:layout_width="56dp"
         android:layout_height="56dp"
         android:layout_gravity="bottom|end"

@@ -25,7 +25,7 @@ public class DatabaseResultAdapter extends ArrayAdapter<BaseResultModel> {
         BaseResultModel result = getItem(position);
 
         if (convertView == null) {
-            convertView = LayoutInflater.from(getContext()).inflate(R.layout.ocr_result_item, parent, false);
+            convertView = LayoutInflater.from(getContext()).inflate(R.layout.ocr_database_item, parent, false);
         }
 
         TextView textViewOriginal = convertView.findViewById(R.id.text_view_original);
