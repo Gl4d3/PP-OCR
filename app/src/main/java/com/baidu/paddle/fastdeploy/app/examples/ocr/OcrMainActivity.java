@@ -61,7 +61,7 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
     private View captureArea;
 
 
-    private List<BaseResultModel> results = new ArrayList<>();
+    private final List<BaseResultModel> results = new ArrayList<>();
     private BaseResultAdapter adapter;
     private static final float CONFIDENCE_THRESHOLD = 0.1f; // 40% confidence threshold
 
@@ -178,6 +178,7 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
         }
     }
 
+    //  Flashlight Functionality
     private void toggleFlashlight() {
         CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         if (cameraManager == null) {
@@ -388,7 +389,7 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
             runOnUiThread(new Runnable() {
                 @SuppressLint("SetTextI18n")
                 public void run() {
-                    tvStatus.setText(Integer.toString(fps) + "fps");
+                    tvStatus.setText(fps + "fps");
                 }
             });
             frameCounter = 0;
@@ -427,14 +428,14 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
 
     public void initView() {
         TYPE = REALTIME_DETECT;
-        svPreview = (CameraSurfaceView) findViewById(R.id.sv_preview);
+        svPreview = findViewById(R.id.sv_preview);
         svPreview.setOnTextureChangedListener(this);
-        tvStatus = (TextView) findViewById(R.id.tv_status);
-        btnTorch = (ImageButton) findViewById(R.id.btn_torch);
+        tvStatus = findViewById(R.id.tv_status);
+        btnTorch = findViewById(R.id.btn_torch);
         btnTorch.setOnClickListener(this);
-        btnShutter = (ImageButton) findViewById(R.id.btn_shutter);
+        btnShutter = findViewById(R.id.btn_shutter);
         btnShutter.setOnClickListener(this);
-        btnSettings = (ImageButton) findViewById(R.id.btn_settings);
+        btnSettings = findViewById(R.id.btn_settings);
         btnSettings.setOnClickListener(this);
         realtimeToggleButton = findViewById(R.id.realtime_toggle_btn);
         realtimeToggleButton.setOnClickListener(this);
@@ -604,24 +605,24 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
         if (OcrSettingsActivity.checkAndUpdateSettings(this)) {
             String realModelDir = getCacheDir() + "/" + OcrSettingsActivity.modelDir;
             String detModelName = "ch_PP-OCRv3_det_infer";
-            String clsModelName = "ch_ppocr_mobile_v2.0_cls_infer";
+//            String clsModelName = "ch_ppocr_mobile_v2.0_cls_infer";
             String recModelName = "ch_PP-OCRv3_rec_infer";
             String realDetModelDir = realModelDir + "/" + detModelName;
-            String realClsModelDir = realModelDir + "/" + clsModelName;
+//            String realClsModelDir = realModelDir + "/" + clsModelName;
             String realRecModelDir = realModelDir + "/" + recModelName;
             String srcDetModelDir = OcrSettingsActivity.modelDir + "/" + detModelName;
-            String srcClsModelDir = OcrSettingsActivity.modelDir + "/" + clsModelName;
+//            String srcClsModelDir = OcrSettingsActivity.modelDir + "/" + clsModelName;
             String srcRecModelDir = OcrSettingsActivity.modelDir + "/" + recModelName;
             Utils.copyDirectoryFromAssets(this, srcDetModelDir, realDetModelDir);
-            Utils.copyDirectoryFromAssets(this, srcClsModelDir, realClsModelDir);
+//            Utils.copyDirectoryFromAssets(this, srcClsModelDir, realClsModelDir);
             Utils.copyDirectoryFromAssets(this, srcRecModelDir, realRecModelDir);
             String realLabelPath = getCacheDir() + "/" + OcrSettingsActivity.labelPath;
             Utils.copyFileFromAssets(this, OcrSettingsActivity.labelPath, realLabelPath);
 
             String detModelFile = realDetModelDir + "/" + "inference.pdmodel";
             String detParamsFile = realDetModelDir + "/" + "inference.pdiparams";
-            String clsModelFile = realClsModelDir + "/" + "inference.pdmodel";
-            String clsParamsFile = realClsModelDir + "/" + "inference.pdiparams";
+//            String clsModelFile = realClsModelDir + "/" + "inference.pdmodel";
+//            String clsParamsFile = realClsModelDir + "/" + "inference.pdiparams";
             String recModelFile = realRecModelDir + "/" + "inference.pdmodel";
             String recParamsFile = realRecModelDir + "/" + "inference.pdiparams";
             String recLabelFilePath = realLabelPath; // ppocr_keys_v1.txt
@@ -640,7 +641,7 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
                 recOption.enableLiteFp16();
             }
             DBDetector detModel = new DBDetector(detModelFile, detParamsFile, detOption);
-            Classifier clsModel = new Classifier(clsModelFile, clsParamsFile, clsOption);
+//            Classifier clsModel = new Classifier(clsModelFile, clsParamsFile, clsOption);
             Recognizer recModel = new Recognizer(recModelFile, recParamsFile, recLabelFilePath, recOption);
             predictor.init(detModel, recModel);
 

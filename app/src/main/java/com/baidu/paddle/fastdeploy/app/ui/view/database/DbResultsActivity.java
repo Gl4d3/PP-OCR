@@ -5,6 +5,7 @@ import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -41,7 +42,7 @@ public class DbResultsActivity extends AppCompatActivity {
         loadOCRResultsFromDatabase();
 
         adapter = new DatabaseResultAdapter(this, ocrResultsList);
-        listView.setAdapter(adapter);
+        listView.setAdapter((ListAdapter) adapter);
     }
 
     private void loadOCRResultsFromDatabase() {
