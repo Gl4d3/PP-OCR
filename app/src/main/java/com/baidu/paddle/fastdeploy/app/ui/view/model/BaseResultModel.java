@@ -57,7 +57,7 @@ public class BaseResultModel {
 
     public void setElapsedTime(long elapsedTime){ this.elapsedTime = elapsedTime; }
 
-    public String getImagePath() {  return getImagePath();   }
+    public String getImagePath() {  return imagePath;   }
 
     public void setImagePath(String imagePath){ this.imagePath = imagePath; }
 }

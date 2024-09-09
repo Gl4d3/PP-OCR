@@ -16,7 +16,7 @@ import android.widget.ImageButton; import android.widget.ImageView; import andro
 
 import com.baidu.paddle.fastdeploy.RuntimeOption; import com.baidu.paddle.fastdeploy.app.examples.R; import com.baidu.paddle.fastdeploy.app.ui.view.CameraSurfaceView; import com.baidu.paddle.fastdeploy.app.ui.view.ResultListView; import com.baidu.paddle.fastdeploy.app.ui.Utils; import com.baidu.paddle.fastdeploy.app.ui.view.adapter.BaseResultAdapter;
 import com.baidu.paddle.fastdeploy.app.ui.view.database.DatabaseHelper;
-import com.baidu.paddle.fastdeploy.app.ui.view.database.DbResultsActivity;
+import com.baidu.paddle.fastdeploy.app.ui.view.database.DatabaseResultActivity;
 import com.baidu.paddle.fastdeploy.app.ui.view.model.BaseResultModel; import com.baidu.paddle.fastdeploy.pipeline.PPOCRv3; import com.baidu.paddle.fastdeploy.vision.OCRResult; import com.baidu.paddle.fastdeploy.vision.Visualize; import com.baidu.paddle.fastdeploy.vision.ocr.Classifier; import com.baidu.paddle.fastdeploy.vision.ocr.DBDetector; import com.baidu.paddle.fastdeploy.vision.ocr.Recognizer;
 
 import java.util.ArrayList; import java.util.List;
@@ -587,7 +587,7 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
 
     //  View Database Results/History
     private void openOCRDatabase() {
-        Intent intent = new Intent(this, DbResultsActivity.class);
+        Intent intent = new Intent(this, DatabaseResultActivity.class);
         startActivity(intent);
     }
 

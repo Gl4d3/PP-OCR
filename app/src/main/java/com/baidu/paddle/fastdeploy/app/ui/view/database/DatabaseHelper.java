@@ -1,11 +1,16 @@
 package com.baidu.paddle.fastdeploy.app.ui.view.database;
 
+import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
+
+import com.baidu.paddle.fastdeploy.app.ui.view.model.BaseResultModel;
+
+import java.util.ArrayList;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String TAG = "DatabaseHelper";
@@ -64,5 +69,42 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Cursor cursor = db.query(TABLE_OCR_RESULTS, null, null, null, null, null, null);
         Log.d(TAG, "Retrieved " + cursor.getCount() + " OCR results from database");
         return cursor;
+    }
+
+    @SuppressLint("Range")
+    public BaseResultModel getOneResult() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_OCR_RESULTS, null, null, null, null, null, null);
+        if (cursor != null && cursor.moveToFirst()) {
+            BaseResultModel result = new BaseResultModel();
+            result.setName(cursor.getString(cursor.getColumnIndex(COLUMN_TEXT)));
+            result.setFilteredText(cursor.getString(cursor.getColumnIndex(COLUMN_FILTERED_TEXT)));
+            result.setConfidence(cursor.getFloat(cursor.getColumnIndex(COLUMN_CONFIDENCE)));
+            result.setElapsedTime(cursor.getLong(cursor.getColumnIndex(COLUMN_PROCESSING_TIME)));
+            result.setImagePath(cursor.getString(cursor.getColumnIndex(COLUMN_IMAGE_PATH)));
+            cursor.close();
+            return result;
+        }
+        return null;
+    }
+
+    @SuppressLint("Range")
+    public ArrayList<BaseResultModel> getResults() {
+        ArrayList<BaseResultModel> results = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_OCR_RESULTS, null, null, null, null, null, null);
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                BaseResultModel result = new BaseResultModel();
+                result.setName(cursor.getString(cursor.getColumnIndex(COLUMN_TEXT)));
+                result.setFilteredText(cursor.getString(cursor.getColumnIndex(COLUMN_FILTERED_TEXT)));
+                result.setConfidence(cursor.getFloat(cursor.getColumnIndex(COLUMN_CONFIDENCE)));
+                result.setElapsedTime(cursor.getLong(cursor.getColumnIndex(COLUMN_PROCESSING_TIME)));
+                result.setImagePath(cursor.getString(cursor.getColumnIndex(COLUMN_IMAGE_PATH)));
+                results.add(result);
+            } while (cursor.moveToNext());
+            cursor.close();
+        }
+        return results;
     }
 }

@@ -30,7 +30,7 @@
             android:label="Settings">
         </activity>
         <activity
-            android:name="com.baidu.paddle.fastdeploy.app.ui.view.database.DbResultsActivity"
+            android:name="com.baidu.paddle.fastdeploy.app.ui.view.database.DatabaseResultActivity"
             android:label="OCR Database Results"/>
     </application>
 
