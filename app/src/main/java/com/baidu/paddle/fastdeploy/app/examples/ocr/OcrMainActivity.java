@@ -1,5 +1,3 @@
-// 11:00 am Backup... Everything works (But cropping is off)
-
 package com.baidu.paddle.fastdeploy.app.examples.ocr;
 
 import static com.baidu.paddle.fastdeploy.app.ui.Utils.decodeBitmap; import static com.baidu.paddle.fastdeploy.app.ui.Utils.getRealPathFromURI;
@@ -12,11 +10,30 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle; import android.os.SystemClock; import android.preference.PreferenceManager; import android.support.annotation.NonNull; import android.support.v4.app.ActivityCompat; import android.support.v4.content.ContextCompat; import android.view.View; import android.view.ViewGroup; import android.view.Window; import android.view.WindowManager; import android.widget.ImageButton; import android.widget.ImageView; import android.widget.TextView;
+import android.os.Bundle; import android.os.SystemClock; import android.preference.PreferenceManager; import android.support.annotation.NonNull; import android.support.v4.app.ActivityCompat; import android.support.v4.content.ContextCompat; import android.view.View; import android.view.ViewGroup; import android.view.Window; import android.view.WindowManager;
+import android.widget.FrameLayout;
+import android.widget.ImageButton; import android.widget.ImageView; import android.widget.TextView;
 
-import com.baidu.paddle.fastdeploy.RuntimeOption; import com.baidu.paddle.fastdeploy.app.examples.R; import com.baidu.paddle.fastdeploy.app.ui.view.CameraSurfaceView; import com.baidu.paddle.fastdeploy.app.ui.view.ResultListView; import com.baidu.paddle.fastdeploy.app.ui.Utils; import com.baidu.paddle.fastdeploy.app.ui.view.adapter.BaseResultAdapter; import com.baidu.paddle.fastdeploy.app.ui.view.model.BaseResultModel; import com.baidu.paddle.fastdeploy.pipeline.PPOCRv3; import com.baidu.paddle.fastdeploy.vision.OCRResult; import com.baidu.paddle.fastdeploy.vision.Visualize; import com.baidu.paddle.fastdeploy.vision.ocr.Classifier; import com.baidu.paddle.fastdeploy.vision.ocr.DBDetector; import com.baidu.paddle.fastdeploy.vision.ocr.Recognizer;
+import com.baidu.paddle.fastdeploy.RuntimeOption; import com.baidu.paddle.fastdeploy.app.examples.R; import com.baidu.paddle.fastdeploy.app.ui.view.CameraSurfaceView; import com.baidu.paddle.fastdeploy.app.ui.view.ResultListView; import com.baidu.paddle.fastdeploy.app.ui.Utils; import com.baidu.paddle.fastdeploy.app.ui.view.adapter.BaseResultAdapter;
+import com.baidu.paddle.fastdeploy.app.ui.view.database.DatabaseHelper;
+import com.baidu.paddle.fastdeploy.app.ui.view.database.DatabaseResultActivity;
+import com.baidu.paddle.fastdeploy.app.ui.view.model.BaseResultModel; import com.baidu.paddle.fastdeploy.pipeline.PPOCRv3; import com.baidu.paddle.fastdeploy.vision.OCRResult; import com.baidu.paddle.fastdeploy.vision.Visualize; import com.baidu.paddle.fastdeploy.vision.ocr.Classifier; import com.baidu.paddle.fastdeploy.vision.ocr.DBDetector; import com.baidu.paddle.fastdeploy.vision.ocr.Recognizer;
 
 import java.util.ArrayList; import java.util.List;
+
+// Camera Imports
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import android.os.Environment;
+import android.widget.Toast;
+
+// Database Helper imports
+import android.database.sqlite.SQLiteDatabase;
+import android.content.ContentValues;
 
 public class OcrMainActivity extends Activity implements View.OnClickListener, CameraSurfaceView.OnTextureChangedListener { private static final String TAG = OcrMainActivity.class.getSimpleName();
 
@@ -39,11 +56,12 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
     private Bitmap originPicBitmap;
     private Bitmap originShutterBitmap;
     private boolean isShutterBitmapCopied = false;
+    private FrameLayout openDatabase;
 
     private View captureArea;
 
 
-    private List<BaseResultModel> results = new ArrayList<>();
+    private final List<BaseResultModel> results = new ArrayList<>();
     private BaseResultAdapter adapter;
     private static final float CONFIDENCE_THRESHOLD = 0.1f; // 40% confidence threshold
 
@@ -108,6 +126,9 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
                 results.clear();
                 adapter.notifyDataSetChanged();
                 break;
+            case R.id.open_database:
+                openOCRDatabase();
+                break;
             case R.id.btn_settings:
                 startActivity(new Intent(OcrMainActivity.this, OcrSettingsActivity.class));
                 break;
@@ -157,65 +178,64 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
         }
     }
 
+    //  Flashlight Functionality
     private void toggleFlashlight() {
-        final boolean[] isFlashlightOn = {false};
-        CameraManager cameraManager = null;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        if (cameraManager == null) {
+            Toast.makeText(this, "Camera service not available", Toast.LENGTH_SHORT).show();
+            return;
         }
+
         try {
             String cameraId = null;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                for (String id : cameraManager.getCameraIdList()) {
-                    CameraCharacteristics cameraCharacteristics = cameraManager.getCameraCharacteristics(id);
-                    Boolean hasFlash = cameraCharacteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
-                    if (hasFlash != null && hasFlash) {
-                        cameraId = id;
-                        break;
-                    }
+            for (String id : cameraManager.getCameraIdList()) {
+                CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
+                Boolean hasFlash = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+                if (hasFlash != null && hasFlash) {
+                    cameraId = id;
+                    break;
                 }
             }
-            // Listen for torch changes
+
+            if (cameraId == null) {
+                Toast.makeText(this, "No camera with flashlight found", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 String finalCameraId = cameraId;
                 cameraManager.registerTorchCallback(new CameraManager.TorchCallback() {
                     @Override
                     public void onTorchModeChanged(String id, boolean enabled) {
                         if (id.equals(finalCameraId)) {
-                            // Update the torch state and UI
                             isTorchOn = enabled;
-                            if (enabled) {
-                                btnTorch.setImageResource(R.drawable.torch_on);
-                            } else {
-                                btnTorch.setImageResource(R.drawable.torch_off);
-                            }
+                            runOnUiThread(() -> {
+                                btnTorch.setImageResource(enabled ? R.drawable.torch_on : R.drawable.torch_off);
+                            });
                         }
                     }
                 }, null);
-            }
 
-            try {
-                if (isTorchOn) {
-                    // Turn off the torch
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        assert cameraId != null;
-                        cameraManager.setTorchMode(cameraId, false);
+                try {
+                    cameraManager.setTorchMode(cameraId, !isTorchOn);
+                } catch (CameraAccessException e) {
+                    if (e.getReason() == CameraAccessException.CAMERA_IN_USE) {
+                        Toast.makeText(this, "Camera is currently in use", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Error accessing camera: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
-                } else {
-                    // Turn on the torch
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        assert cameraId != null;
-                        cameraManager.setTorchMode(cameraId, true);
-                    }
+                    e.printStackTrace();
                 }
-            } catch (CameraAccessException e) {
-                e.printStackTrace();
+            } else {
+                Toast.makeText(this, "Flashlight not supported on this device", Toast.LENGTH_SHORT).show();
             }
         } catch (CameraAccessException e) {
+            Toast.makeText(this, "Error accessing camera: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             e.printStackTrace();
         }
     }
 
+    //  Handles image Capture
     private void shutterAndPauseCamera() {
         new Thread(new Runnable() {
             @Override
@@ -307,7 +327,6 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
         }
     }
 
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -370,7 +389,7 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
             runOnUiThread(new Runnable() {
                 @SuppressLint("SetTextI18n")
                 public void run() {
-                    tvStatus.setText(Integer.toString(fps) + "fps");
+                    tvStatus.setText(fps + "fps");
                 }
             });
             frameCounter = 0;
@@ -409,18 +428,18 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
 
     public void initView() {
         TYPE = REALTIME_DETECT;
-        svPreview = (CameraSurfaceView) findViewById(R.id.sv_preview);
+        svPreview = findViewById(R.id.sv_preview);
         svPreview.setOnTextureChangedListener(this);
-        tvStatus = (TextView) findViewById(R.id.tv_status);
-        btnTorch = (ImageButton) findViewById(R.id.btn_torch);
+        tvStatus = findViewById(R.id.tv_status);
+        btnTorch = findViewById(R.id.btn_torch);
         btnTorch.setOnClickListener(this);
-        btnShutter = (ImageButton) findViewById(R.id.btn_shutter);
+        btnShutter = findViewById(R.id.btn_shutter);
         btnShutter.setOnClickListener(this);
-        btnSettings = (ImageButton) findViewById(R.id.btn_settings);
+        btnSettings = findViewById(R.id.btn_settings);
         btnSettings.setOnClickListener(this);
         realtimeToggleButton = findViewById(R.id.realtime_toggle_btn);
         realtimeToggleButton.setOnClickListener(this);
-        realtimeToggleButton.setImageResource(R.drawable.realtime_stop_btn); // Set the initial state to stopped
+        realtimeToggleButton.setImageResource(R.drawable.realtime_stop_btn);
         backInPreview = findViewById(R.id.back_in_preview);
         backInPreview.setOnClickListener(this);
         albumSelectButton = findViewById(R.id.iv_select);
@@ -431,6 +450,8 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
         backInResult = findViewById(R.id.back_in_result);
         backInResult.setOnClickListener(this);
         resultView = findViewById(R.id.result_list_view);
+        openDatabase = findViewById(R.id.open_database);
+        openDatabase.setOnClickListener(this);
 
         svPreview = findViewById(R.id.sv_preview);
         captureArea = findViewById(R.id.capture_area);
@@ -441,6 +462,7 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
 
     }
 
+    // Main Processing Function
     private void processImage(Bitmap bitmap) {
 
         // Apply a short delay to ensure the image is fully processed
@@ -451,16 +473,6 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
 
         texts = result.mText;
         recScores = result.mRecScores;
-
-        results.clear();
-        initialized = result.initialized();
-        if (initialized) {
-            for (int i = 0; i < texts.length; i++) {
-                if (recScores[i] > CONFIDENCE_THRESHOLD) {
-                    results.add(new BaseResultModel(i + 1, texts[i], recScores[i]));
-                }
-            }
-        }
 
         adapter.notifyDataSetChanged();
         resultView.invalidate();
@@ -482,7 +494,103 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
         // Display the elapsed time
         TextView elapsedTimeTextView = findViewById(R.id.elapsed_time);
         elapsedTimeTextView.setText("Time: " + elapsedTime + " ms");
+
+        // Create a directory for this OCR result
+        File resultDir = createOCRResultDirectory();
+
+        // Save the cropped image
+        String imagePath = saveCroppedImage(bitmap, resultDir);
+
+        results.clear();
+        initialized = result.initialized();
+        if (initialized) {
+            for (int i = 0; i < texts.length; i++) {
+                if (recScores[i] > CONFIDENCE_THRESHOLD) {
+                    String filteredText = filterText(texts[i]);
+
+                    // A temporal class
+                    BaseResultModel baseResult = new BaseResultModel(i + 1, texts[i], filteredText, recScores[i], elapsedTime, imagePath);
+                    results.add(baseResult);
+                }
+            }
+        }
+
+        // Save the OCR results and processing time
+        saveOCRResults(results, elapsedTime, resultDir, imagePath);
+
+        // Optionally, you can show a toast message to inform the user
+        Toast.makeText(this, "OCR results saved in " + resultDir.getName(), Toast.LENGTH_LONG).show();
     }
+
+    // Create Directory
+    private File createOCRResultDirectory() {
+
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
+        File resultDir = new File(storageDir, "OCR_Results");
+
+        // Create directory if it doesn't exist
+        if (!resultDir.exists()) {
+            resultDir.mkdirs();
+        }
+        return resultDir;
+    }
+
+    // Save Results
+    private void saveOCRResults(List<BaseResultModel> results, long elapsedTime, File resultDir, String imagePath) {
+        // Initialize SQLite database
+        DatabaseHelper dbHelper = new DatabaseHelper(this);
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        for (BaseResultModel result : results) {
+            
+            ContentValues values = new ContentValues();
+            values.put(DatabaseHelper.COLUMN_TEXT, result.getName());
+            values.put(DatabaseHelper.COLUMN_FILTERED_TEXT, result.getFilteredText());
+            values.put(DatabaseHelper.COLUMN_CONFIDENCE, result.getConfidence());
+            values.put(DatabaseHelper.COLUMN_IMAGE_PATH, imagePath);  // Store the image path
+            values.put(DatabaseHelper.COLUMN_PROCESSING_TIME, elapsedTime);
+
+            // Insert into the database
+            db.insert(DatabaseHelper.TABLE_OCR_RESULTS, null, values);
+        }
+
+        db.close();
+    }
+
+    //  Save Cropped Bitmap
+    private String saveCroppedImage(Bitmap croppedBitmap, File resultDir) {
+        // Generate a unique image file name using the timestamp
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String imageFileName = "cropped_image_" + timeStamp + ".jpg";
+        File imageFile = new File(resultDir, imageFileName);
+
+        try (FileOutputStream out = new FileOutputStream(imageFile)) {
+            boolean cropImage = croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
+            // Path to image for reference
+            return imageFile.getAbsolutePath();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // Remove characters != "0-9" and "."
+    private String filterText(String text) {
+        StringBuilder filteredText = new StringBuilder();
+        for (char c : text.toCharArray()) {
+            if (Character.isDigit(c) || c == '.' || (c >= 'o' && c <= '9')) {
+                filteredText.append(c);
+            }
+        }
+        return filteredText.toString();
+    }
+
+    //  View Database Results/History
+    private void openOCRDatabase() {
+        Intent intent = new Intent(this, DatabaseResultActivity.class);
+        startActivity(intent);
+    }
+
 
     @SuppressLint("ApplySharedPref")
     public void initSettings() {
@@ -497,24 +605,24 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
         if (OcrSettingsActivity.checkAndUpdateSettings(this)) {
             String realModelDir = getCacheDir() + "/" + OcrSettingsActivity.modelDir;
             String detModelName = "ch_PP-OCRv3_det_infer";
-            String clsModelName = "ch_ppocr_mobile_v2.0_cls_infer";
+//            String clsModelName = "ch_ppocr_mobile_v2.0_cls_infer";
             String recModelName = "ch_PP-OCRv3_rec_infer";
             String realDetModelDir = realModelDir + "/" + detModelName;
-            String realClsModelDir = realModelDir + "/" + clsModelName;
+//            String realClsModelDir = realModelDir + "/" + clsModelName;
             String realRecModelDir = realModelDir + "/" + recModelName;
             String srcDetModelDir = OcrSettingsActivity.modelDir + "/" + detModelName;
-            String srcClsModelDir = OcrSettingsActivity.modelDir + "/" + clsModelName;
+//            String srcClsModelDir = OcrSettingsActivity.modelDir + "/" + clsModelName;
             String srcRecModelDir = OcrSettingsActivity.modelDir + "/" + recModelName;
             Utils.copyDirectoryFromAssets(this, srcDetModelDir, realDetModelDir);
-            Utils.copyDirectoryFromAssets(this, srcClsModelDir, realClsModelDir);
+//            Utils.copyDirectoryFromAssets(this, srcClsModelDir, realClsModelDir);
             Utils.copyDirectoryFromAssets(this, srcRecModelDir, realRecModelDir);
             String realLabelPath = getCacheDir() + "/" + OcrSettingsActivity.labelPath;
             Utils.copyFileFromAssets(this, OcrSettingsActivity.labelPath, realLabelPath);
 
             String detModelFile = realDetModelDir + "/" + "inference.pdmodel";
             String detParamsFile = realDetModelDir + "/" + "inference.pdiparams";
-            String clsModelFile = realClsModelDir + "/" + "inference.pdmodel";
-            String clsParamsFile = realClsModelDir + "/" + "inference.pdiparams";
+//            String clsModelFile = realClsModelDir + "/" + "inference.pdmodel";
+//            String clsParamsFile = realClsModelDir + "/" + "inference.pdiparams";
             String recModelFile = realRecModelDir + "/" + "inference.pdmodel";
             String recParamsFile = realRecModelDir + "/" + "inference.pdiparams";
             String recLabelFilePath = realLabelPath; // ppocr_keys_v1.txt
@@ -533,9 +641,9 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
                 recOption.enableLiteFp16();
             }
             DBDetector detModel = new DBDetector(detModelFile, detParamsFile, detOption);
-            Classifier clsModel = new Classifier(clsModelFile, clsParamsFile, clsOption);
+//            Classifier clsModel = new Classifier(clsModelFile, clsParamsFile, clsOption);
             Recognizer recModel = new Recognizer(recModelFile, recParamsFile, recLabelFilePath, recOption);
-            predictor.init(detModel, clsModel, recModel);
+            predictor.init(detModel, recModel);
 
         }
     }

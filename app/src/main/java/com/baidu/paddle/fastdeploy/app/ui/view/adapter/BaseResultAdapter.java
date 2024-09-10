@@ -12,6 +12,8 @@ import android.widget.TextView;
 import com.baidu.paddle.fastdeploy.app.examples.R;
 import com.baidu.paddle.fastdeploy.app.ui.view.model.BaseResultModel;
 
+import org.w3c.dom.Text;
+
 import java.text.DecimalFormat;
 import java.util.List;
 
@@ -36,6 +38,9 @@ public class BaseResultAdapter extends ArrayAdapter<BaseResultModel> {
 
         TextView nameText = (TextView) view.findViewById(R.id.name);
         nameText.setText(String.valueOf(model.getName()));
+
+        TextView filteredText = (TextView) view.findViewById(R.id.filtered_text);
+        filteredText.setText(String.valueOf(model.getFilteredText()));
 
         TextView confidenceText = (TextView) view.findViewById(R.id.confidence);
         confidenceText.setText(formatFloatString(model.getConfidence()));

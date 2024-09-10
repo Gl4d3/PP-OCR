@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#2C2C2C">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <com.baidu.paddle.fastdeploy.app.ui.layout.ActionBarLayout
+            android:id="@+id/action_bar_result"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="@drawable/rounded_corner_background"
+            android:padding="8dp">
+
+            <ImageView
+                android:id="@+id/back_in_result"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="8dp"
+                android:padding="10dp"
+                android:src="@drawable/back_btn"
+                app:tint="#F5A623" />
+
+        </com.baidu.paddle.fastdeploy.app.ui.layout.ActionBarLayout>
+
+        <ScrollView
+            android:id="@+id/scroll_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="16dp">
+
+            <LinearLayout
+                android:id="@+id/linear_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <include layout="@layout/ocr_database_item" />
+
+            </LinearLayout>
+        </ScrollView>
+
+    </LinearLayout>
+</FrameLayout>
