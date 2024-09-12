@@ -3,10 +3,10 @@ package com.baidu.paddle.fastdeploy.app.ui.view.model;
 public class BaseResultModel {
     private int index;
     private String name;
-    private String filteredText;
     private float confidence;
     private long elapsedTime;
     private String imagePath;
+    private String filteredText;
 
     public BaseResultModel() {
 

@@ -5,13 +5,13 @@
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
     android:id="@+id/database_item"
-    android:orientation="horizontal"
+    android:orientation="vertical"
     android:background="@drawable/rounded_corner_background">
 
     <ImageView
         android:id="@+id/image_view_result"
-        android:layout_width="150dp"
-        android:layout_height="140dp"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
         android:scaleType="centerCrop"
         android:src="@drawable/placeholder_image"
         android:contentDescription="Result Image" />
