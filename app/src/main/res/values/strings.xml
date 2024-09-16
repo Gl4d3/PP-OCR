@@ -33,14 +33,11 @@
     <string name="DETECTION_LABEL_PATH_DEFAULT">labels/coco_label_list.txt</string>
     <!-- PP-OCRv2 & PP-OCRv3 values ... -->
     <string name="OCR_MODEL_DIR_DEFAULT">models</string>
-    <string name="OCR_REC_LABEL_DEFAULT">labels/ppocr_keys_v1.txt</string>
+    <string name="OCR_REC_LABEL_DEFAULT">labels/en_dict.txt</string>
     <!-- classification values ... -->
     <string name="CLASSIFICATION_MODEL_DIR_DEFAULT">models/MobileNetV1_x0_25_infer</string>
     <string name="CLASSIFICATION_LABEL_PATH_DEFAULT">labels/imagenet1k_label_list.txt</string>
-    <!-- facedet values ... -->
-    <string name="FACEDET_MODEL_DIR_DEFAULT">models/scrfd_500m_bnkps_shape320x320_pd</string>
-    <!-- segmentation values ... -->
-    <string name="SEGMENTATION_MODEL_DIR_DEFAULT">models/human_pp_humansegv1_lite_192x192_inference_model</string>
+
     <!-- Other resources values-->
     <string name="action_bar_take_photo">Photo Recognition</string>
     <string name="action_bar_realtime">Optical Character Recognition</string>

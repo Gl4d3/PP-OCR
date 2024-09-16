@@ -5,19 +5,20 @@
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
     android:id="@+id/database_item"
-    android:orientation="horizontal"
+    android:orientation="vertical"
+    android:layout_marginTop="8dp"
     android:background="@drawable/rounded_corner_background">
 
     <ImageView
         android:id="@+id/image_view_result"
-        android:layout_width="150dp"
-        android:layout_height="140dp"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
         android:scaleType="centerCrop"
         android:src="@drawable/placeholder_image"
         android:contentDescription="Result Image" />
 
     <LinearLayout
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:orientation="vertical"
