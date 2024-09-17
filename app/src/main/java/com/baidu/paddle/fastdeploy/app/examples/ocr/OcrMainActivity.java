@@ -546,7 +546,7 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
     private String saveCroppedImage(Bitmap croppedBitmap, File resultDir) {
         // Generate a unique image file name using the timestamp
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        String imageFileName = "cropped_image_" + timeStamp + ".jpg";
+        String imageFileName = "ocr_result_" + timeStamp + ".jpg";
         File imageFile = new File(resultDir, imageFileName);
 
         try (FileOutputStream out = new FileOutputStream(imageFile)) {
@@ -589,25 +589,19 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
     public void checkAndUpdateSettings() {
         if (OcrSettingsActivity.checkAndUpdateSettings(this)) {
             String realModelDir = getCacheDir() + "/" + OcrSettingsActivity.modelDir;
-            String detModelName = "ch_PP-OCRv3_det_infer_YOLO";
-//            String clsModelName = "ch_ppocr_mobile_v2.0_cls_infer";
+            String detModelName = "ch_PP-OCRv3_det_infer";
             String recModelName = "ch_PP-OCRv3_rec_infer";
             String realDetModelDir = realModelDir + "/" + detModelName;
-//            String realClsModelDir = realModelDir + "/" + clsModelName;
             String realRecModelDir = realModelDir + "/" + recModelName;
             String srcDetModelDir = OcrSettingsActivity.modelDir + "/" + detModelName;
-//            String srcClsModelDir = OcrSettingsActivity.modelDir + "/" + clsModelName;
             String srcRecModelDir = OcrSettingsActivity.modelDir + "/" + recModelName;
             Utils.copyDirectoryFromAssets(this, srcDetModelDir, realDetModelDir);
-//            Utils.copyDirectoryFromAssets(this, srcClsModelDir, realClsModelDir);
             Utils.copyDirectoryFromAssets(this, srcRecModelDir, realRecModelDir);
             String realLabelPath = getCacheDir() + "/" + OcrSettingsActivity.labelPath;
             Utils.copyFileFromAssets(this, OcrSettingsActivity.labelPath, realLabelPath);
 
             String detModelFile = realDetModelDir + "/" + "inference.pdmodel";
             String detParamsFile = realDetModelDir + "/" + "inference.pdiparams";
-//            String clsModelFile = realClsModelDir + "/" + "inference.pdmodel";
-//            String clsParamsFile = realClsModelDir + "/" + "inference.pdiparams";
             String recModelFile = realRecModelDir + "/" + "inference.pdmodel";
             String recParamsFile = realRecModelDir + "/" + "inference.pdiparams";
             String recLabelFilePath = realLabelPath; // ppocr_keys_v1.txt
@@ -626,7 +620,6 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
                 recOption.enableLiteFp16();
             }
             DBDetector detModel = new DBDetector(detModelFile, detParamsFile, detOption);
-//            Classifier clsModel = new Classifier(clsModelFile, clsParamsFile, clsOption);
             Recognizer recModel = new Recognizer(recModelFile, recParamsFile, recLabelFilePath, recOption);
             predictor.init(detModel, recModel);
 
