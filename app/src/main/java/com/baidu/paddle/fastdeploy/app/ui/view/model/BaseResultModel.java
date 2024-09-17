@@ -1,12 +1,12 @@
 package com.baidu.paddle.fastdeploy.app.ui.view.model;
 
 public class BaseResultModel {
-    private int index;
-    private String name;
-    private float confidence;
-    private long elapsedTime;
-    private String imagePath;
-    private String filteredText;
+    private int index; // Index of Result
+    private String name; // Original Extracted Test
+    private float confidence; // Model Confidence
+    private long elapsedTime; // Processing Time
+    private String imagePath; // Image Path for Visualization
+    private String filteredText; // Text that does not contain 0-9 and .
 
     public BaseResultModel() {
 
