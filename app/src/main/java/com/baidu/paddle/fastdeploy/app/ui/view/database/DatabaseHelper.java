@@ -49,7 +49,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         onCreate(db);
         Log.d(TAG, "Database upgraded from version " + oldVersion + " to " + newVersion);
     }
-
+// /storage/emulated/0/Android/data/com.baidu.paddle.fastdeploy.app.examples/files/Documents/OCR_Results/cropped_image_20240906_153559.jpg
     public long insertOCRResult(String text, String filteredText, float confidence, String imagePath, long processingTime) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
