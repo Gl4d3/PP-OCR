@@ -8,7 +8,6 @@ app/cache
 app/libs/fastdeploy*
 app/.cxx
 app/build
-app/src/main/assets/models/*
 app/.gradle
 app/.idea
 fastdeploy/cache
