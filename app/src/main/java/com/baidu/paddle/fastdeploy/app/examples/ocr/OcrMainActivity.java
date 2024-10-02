@@ -35,7 +35,10 @@ import android.widget.Toast;
 import android.database.sqlite.SQLiteDatabase;
 import android.content.ContentValues;
 
-public class OcrMainActivity extends Activity implements View.OnClickListener, CameraSurfaceView.OnTextureChangedListener { private static final String TAG = OcrMainActivity.class.getSimpleName();
+public class OcrMainActivity extends Activity implements View.OnClickListener, CameraSurfaceView.OnTextureChangedListener {
+    static {
+        OcrMainActivity.class.getSimpleName();
+    }
 
     CameraSurfaceView svPreview;
     TextView tvStatus;
@@ -95,8 +98,6 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
     // Record the start time
     long startTime;
 
-    private boolean isTorchOn = false;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -117,6 +118,9 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
 
         // Init the camera preview and UI components
         initView();
+
+        // Toggle the real-time status
+        toggleRealtimeStyle();
     }
 
     @SuppressLint("NonConstantResourceId")
@@ -334,19 +338,16 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
             realtimeToggleButton.setImageResource(R.drawable.realtime_stop_btn);
             svPreview.setOnTextureChangedListener(this);
             tvStatus.setVisibility(View.VISIBLE);
-        }else {
+        } else {
             isRealtimeStatusRunning = true;
             realtimeToggleButton.setImageResource(R.drawable.realtime_start_btn);
             tvStatus.setVisibility(View.GONE);
             isShutterBitmapCopied = false;
-            svPreview.setOnTextureChangedListener(new CameraSurfaceView.OnTextureChangedListener() {
-                @Override
-                public boolean onTextureChanged(Bitmap ARGB8888ImageBitmap) {
-                    if (TYPE == BTN_SHUTTER) {
-                        copyBitmapFromCamera(ARGB8888ImageBitmap);
-                    }
-                    return false;
+            svPreview.setOnTextureChangedListener(ARGB8888ImageBitmap -> {
+                if (TYPE == BTN_SHUTTER) {
+                    copyBitmapFromCamera(ARGB8888ImageBitmap);
                 }
+                return false;
             });
         }
     }
@@ -411,7 +412,7 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
     }
 
     public void initView() {
-        TYPE = REALTIME_DETECT;
+//        TYPE = REALTIME_DETECT;
         svPreview = findViewById(R.id.sv_preview);
         svPreview.setOnTextureChangedListener(this);
         tvStatus = findViewById(R.id.tv_status);
@@ -493,7 +494,7 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
                 if (recScores[i] > CONFIDENCE_THRESHOLD) {
                     String filteredText = filterText(texts[i]);
 
-                    // A temporal class
+                    // A temporary class
                     BaseResultModel baseResult = new BaseResultModel(i + 1, texts[i], filteredText, recScores[i], elapsedTime, imagePath);
                     results.add(baseResult);
                 }
@@ -589,7 +590,7 @@ public class OcrMainActivity extends Activity implements View.OnClickListener, C
     public void checkAndUpdateSettings() {
         if (OcrSettingsActivity.checkAndUpdateSettings(this)) {
             String realModelDir = getCacheDir() + "/" + OcrSettingsActivity.modelDir;
-            String detModelName = "ch_PP-OCRv3_det_infer";
+            String detModelName = "det_model_v1";
             String recModelName = "ch_PP-OCRv3_rec_infer";
             String realDetModelDir = realModelDir + "/" + detModelName;
             String realRecModelDir = realModelDir + "/" + recModelName;
